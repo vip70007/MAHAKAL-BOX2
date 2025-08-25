@@ -1,0 +1,230 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Box2 - MAHAKAL Numbers</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #ff7e5f, #6a11cb);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      color: white;
+    }
+    .container {
+      background: rgba(0,0,0,0.6);
+      padding: 25px;
+      border-radius: 20px;
+      width: 350px;
+      box-shadow: 0 0 15px #000;
+    }
+    h1 { color: gold; margin-bottom: 15px; }
+    input[type="tel"], .num-box {
+      padding: 10px;
+      font-size: 20px;
+      border: none;
+      border-radius: 10px;
+      text-align: center;
+      margin: 5px;
+    }
+    input[type="tel"] { width: 90%; }
+    .num-box {
+      width: 50px;
+      height: 50px;
+      color: gold;
+      font-weight: bold;
+    }
+    .red { background: darkred; }
+    .green { background: darkgreen; }
+    .blue { background: darkblue; }
+    .purple { background: indigo; }
+    .orange { background: darkorange; }
+    .cyan { background: teal; }
+    button {
+      margin-top: 15px;
+      padding: 12px 25px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #ffd700, #ffb400);
+      color: black;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    button:hover { transform: scale(1.05); box-shadow: 0 6px 15px rgba(0,0,0,0.6); }
+    #saveBtn { cursor: not-allowed; opacity: 0.6; }
+    #countdown { margin-top: 15px; font-weight: bold; color: cyan; }
+    #mynumber { margin-top: 10px; color: #ffeb3b; font-weight: bold; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>CHOOSE YOUR 3 NUMBERS - MAHAKAL</h1>
+
+    <div id="mobileSection">
+      <input type="tel" id="mobileInput" maxlength="10" placeholder="Enter Mobile Number">
+      <br>
+      <button onclick="verifyMobile()">Verify</button>
+    </div>
+
+    <div id="gameSection" class="hidden">
+      <div id="mynumber"></div>
+      <div>
+        <input maxlength="1" class="num-box red" id="num1"
+               oninput="validateAndMove(this)"
+               onkeydown="movePrevOnBackspace(event,this)">
+        <input maxlength="1" class="num-box green" id="num2"
+               oninput="validateAndMove(this)"
+               onkeydown="movePrevOnBackspace(event,this)">
+        <input maxlength="1" class="num-box blue" id="num3"
+               oninput="validateAndMove(this)"
+               onkeydown="movePrevOnBackspace(event,this)">
+      </div>
+      <!-- Disabled Save Button -->
+      <button id="saveBtn" disabled>Save Numbers</button>
+      <div id="randomRow">
+        <input class="num-box purple" id="rand1" disabled>
+        <input class="num-box orange" id="rand2" disabled>
+        <input class="num-box cyan" id="rand3" disabled>
+      </div>
+      <div id="countdown"></div>
+    </div>
+  </div>
+
+  <!-- 🎵 Energetic Background Music -->
+  <audio id="bgMusic" loop>
+    <source src="https://www.bensound.com/bensound-music/bensound-energy.mp3" type="audio/mpeg">
+    Your browser does not support the audio element.
+  </audio>
+
+<script>
+  const HRS72 = 72 * 60 * 60 * 1000;
+  let currentMobile = null;
+
+  function validateAndMove(el) {
+    if (!/^[0-9]$/.test(el.value)) { el.value = ""; return; }
+    if (el.nextElementSibling && el.nextElementSibling.classList.contains("num-box")) {
+      el.nextElementSibling.focus();
+    } else {
+      autoSaveNumbers();
+    }
+  }
+
+  function movePrevOnBackspace(e, el) {
+    if (e.key === "Backspace" && !el.value) {
+      if (el.previousElementSibling && el.previousElementSibling.classList.contains("num-box")) {
+        el.previousElementSibling.focus();
+      }
+    }
+  }
+
+  function verifyMobile(){
+    const mobile = document.getElementById("mobileInput").value.trim();
+    if(!/^[0-9]{10}$/.test(mobile)){
+      alert("Enter valid 10-digit mobile number!");
+      return;
+    }
+    currentMobile = mobile;
+    const lockKey = "maha_lock_" + mobile;
+    const saveKey = "maha_numbers_" + mobile;
+    const randomKey = "maha_random_" + mobile;
+
+    const lockData = JSON.parse(localStorage.getItem(lockKey));
+    if(lockData && Date.now() - lockData.start < HRS72){
+      document.getElementById("gameSection").classList.remove("hidden");
+      document.getElementById("mobileSection").classList.add("hidden");
+      document.getElementById("mynumber").innerText = "Your number: " + mobile;
+
+      const nums = JSON.parse(localStorage.getItem(saveKey));
+      if(nums){
+        document.getElementById("num1").value = nums[0];
+        document.getElementById("num2").value = nums[1];
+        document.getElementById("num3").value = nums[2];
+        document.getElementById("num1").disabled = true;
+        document.getElementById("num2").disabled = true;
+        document.getElementById("num3").disabled = true;
+      }
+      const randoms = JSON.parse(localStorage.getItem(randomKey));
+      if(randoms){
+        document.getElementById("rand1").value = randoms[0];
+        document.getElementById("rand2").value = randoms[1];
+        document.getElementById("rand3").value = randoms[2];
+      }
+      startCountdown(lockData.start, lockKey);
+    } else {
+      document.getElementById("gameSection").classList.remove("hidden");
+      document.getElementById("mobileSection").classList.add("hidden");
+      document.getElementById("mynumber").innerText = "Your number: " + mobile;
+      setTimeout(() => { document.getElementById("num1").focus(); }, 50);
+    }
+
+    // 🎵 Start energetic background music
+    const music = document.getElementById("bgMusic");
+    if (music) {
+      music.play().catch(err => console.log("Music play blocked:", err));
+    }
+  }
+
+  function autoSaveNumbers(){
+    const n1=document.getElementById("num1").value;
+    const n2=document.getElementById("num2").value;
+    const n3=document.getElementById("num3").value;
+    if(!(n1&&n2&&n3)){ return; }
+
+    const saveKey = "maha_numbers_" + currentMobile;
+    const lockKey = "maha_lock_" + currentMobile;
+    const randomKey = "maha_random_" + currentMobile;
+
+    localStorage.setItem(saveKey, JSON.stringify([n1,n2,n3]));
+    const startTime = Date.now();
+    localStorage.setItem(lockKey, JSON.stringify({start:startTime}));
+
+    let randoms = JSON.parse(localStorage.getItem(randomKey));
+    if(!randoms){
+      randoms=[
+        Math.floor(Math.random()*10),
+        Math.floor(Math.random()*10),
+        Math.floor(Math.random()*10)
+      ];
+      localStorage.setItem(randomKey, JSON.stringify(randoms));
+    }
+    document.getElementById("rand1").value = randoms[0];
+    document.getElementById("rand2").value = randoms[1];
+    document.getElementById("rand3").value = randoms[2];
+
+    document.getElementById("num1").disabled = true;
+    document.getElementById("num2").disabled = true;
+    document.getElementById("num3").disabled = true;
+
+    startCountdown(startTime, lockKey);
+  }
+
+  function startCountdown(start, lockKey){
+    const cd=document.getElementById("countdown");
+    function update(){
+      const diff = HRS72-(Date.now()-start);
+      if(diff<=0){
+        cd.innerText="Unlocked!";
+        localStorage.removeItem(lockKey);
+        localStorage.removeItem("maha_numbers_"+currentMobile);
+        localStorage.removeItem("maha_random_"+currentMobile);
+        return;
+      }
+      const h=Math.floor(diff/3600000);
+      const m=Math.floor((diff%3600000)/60000);
+      const s=Math.floor((diff%60000)/1000);
+      cd.innerText=`Locked: ${h}h ${m}m ${s}s`;
+      setTimeout(update,1000);
+    }
+    update();
+  }
+</script>
+</body>
+</html>
