@@ -1,0 +1,262 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MAHAKAL Numbers</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      color: white;
+      background: linear-gradient(135deg, #ff7e5f, #feb47b, #6a11cb, #2575fc);
+      background-size: 400% 400%;
+      animation: gradientBG 12s ease infinite;
+    }
+
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    h1 {
+      font-size: 2.5em;
+      margin-top: 30px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }
+
+    h2 {
+      margin: 20px 0 10px;
+      font-size: 1.3em;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+    }
+
+    .container {
+      margin-top: 20px;
+    }
+
+    input[type="text"], input[type="number"] {
+      font-size: 22px;
+      text-align: center;
+      border-radius: 10px;
+      border: none;
+      padding: 12px;
+      width: 280px;
+      margin: 8px auto;
+      display: block;
+    }
+
+    #clientNumbers input {
+      width: 60px;
+      height: 60px;
+      font-size: 28px;
+      font-weight: bold;
+      text-align: center;
+      margin: 10px;
+      border-radius: 10px;
+      border: 2px solid white;
+      color: gold;
+    }
+
+    #clientNumbers input:nth-child(1) { background: red; }
+    #clientNumbers input:nth-child(2) { background: green; }
+    #clientNumbers input:nth-child(3) { background: blue; }
+
+    #randomNumbers input {
+      width: 60px;
+      height: 60px;
+      font-size: 28px;
+      font-weight: bold;
+      text-align: center;
+      margin: 10px;
+      border-radius: 10px;
+      border: 2px solid white;
+      color: gold;
+    }
+
+    #randomNumbers input:nth-child(1) { background: purple; }
+    #randomNumbers input:nth-child(2) { background: orange; }
+    #randomNumbers input:nth-child(3) { background: cyan; }
+
+    button {
+      margin-top: 20px;
+      padding: 12px 25px;
+      font-size: 18px;
+      border: none;
+      border-radius: 12px;
+      background: #ffd700;
+      color: black;
+      cursor: pointer;
+      font-weight: bold;
+      transition: transform 0.2s ease;
+    }
+    button:hover { transform: scale(1.05); }
+
+    #countdown {
+      margin-top: 20px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <h1>WELCOME TO MAHAKAL</h1>
+  <h2 id="step1">Apna mobile number enter karke Verify pe click kijiye</h2>
+
+  <div class="container">
+    <input type="text" id="mobileNumber" maxlength="10" placeholder="Enter Mobile Number">
+    <button onclick="verifyNumber()">Verify</button>
+    <p id="showMobile"></p>
+  </div>
+
+  <div id="numberSection" class="hidden">
+    <h2 id="step2">Apne 3 pasandida number enter kijiye</h2>
+    <div id="clientNumbers">
+      <input maxlength="1" oninput="validateInput(this)">
+      <input maxlength="1" oninput="validateInput(this)">
+      <input maxlength="1" oninput="validateInput(this)">
+    </div>
+
+    <h2 id="step3">Save numbers pe click kijiye</h2>
+    <button onclick="saveNumbers()" id="saveBtn">Save Numbers</button>
+
+    <div id="randomNumbers" class="hidden"></div>
+    <p id="countdown"></p>
+  </div>
+
+<script>
+  const verifyKey = "maha_mobile";
+  const saveKey = "maha_numbers";
+  const randomKey = "maha_random";
+  const lockKey = "maha_lock";
+
+  function verifyNumber() {
+    const mobile = document.getElementById("mobileNumber").value.trim();
+    if (!/^[0-9]{10}$/.test(mobile)) {
+      alert("Enter valid 10-digit mobile number!");
+      return;
+    }
+
+    const now = Date.now();
+    const lastLock = localStorage.getItem(lockKey);
+    if (lastLock && now < lastLock) {
+      alert("This mobile already used, wait for unlock.");
+      return;
+    }
+
+    localStorage.setItem(verifyKey, mobile);
+    document.getElementById("showMobile").innerText = "Your number: " + mobile;
+    document.getElementById("numberSection").classList.remove("hidden");
+  }
+
+  function validateInput(input) {
+    let val = input.value;
+    if (!/^[0-9]$/.test(val)) {
+      input.value = "";
+      return;
+    }
+    let next = input.nextElementSibling;
+    if (next && next.tagName === "INPUT") next.focus();
+  }
+
+  document.querySelectorAll("#clientNumbers input").forEach((inp, idx, arr) => {
+    inp.addEventListener("keydown", e => {
+      if (e.key === "Backspace" && inp.value === "") {
+        let prev = arr[idx - 1];
+        if (prev) prev.focus();
+      }
+    });
+  });
+
+  function saveNumbers() {
+    const inputs = document.querySelectorAll("#clientNumbers input");
+    let nums = [];
+    for (let i of inputs) {
+      if (i.value === "") {
+        alert("Enter all 3 numbers!");
+        return;
+      }
+      nums.push(i.value);
+    }
+
+    // Lock for 72 hrs
+    const lockUntil = Date.now() + 72 * 60 * 60 * 1000;
+    localStorage.setItem(saveKey, JSON.stringify(nums));
+    localStorage.setItem(lockKey, lockUntil);
+
+    // Random numbers (only once)
+    if (!localStorage.getItem(randomKey)) {
+      let randoms = [];
+      for (let i = 0; i < 3; i++) {
+        randoms.push(Math.floor(Math.random() * 10));
+      }
+      localStorage.setItem(randomKey, JSON.stringify(randoms));
+    }
+
+    showRandomNumbers();
+    startCountdown(lockUntil);
+    document.getElementById("saveBtn").disabled = true;
+  }
+
+  function showRandomNumbers() {
+    const randoms = JSON.parse(localStorage.getItem(randomKey));
+    if (!randoms) return;
+    const box = document.getElementById("randomNumbers");
+    box.innerHTML = "";
+    randoms.forEach((n, i) => {
+      let input = document.createElement("input");
+      input.value = n;
+      input.disabled = true;
+      box.appendChild(input);
+    });
+    box.classList.remove("hidden");
+  }
+
+  function startCountdown(endTime) {
+    const cd = document.getElementById("countdown");
+    function update() {
+      const now = Date.now();
+      let diff = endTime - now;
+      if (diff <= 0) {
+        cd.innerText = "Unlocked!";
+        localStorage.removeItem(saveKey);
+        localStorage.removeItem(randomKey);
+        localStorage.removeItem(lockKey);
+        return;
+      }
+      let hrs = Math.floor(diff / (1000 * 60 * 60));
+      let mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      let secs = Math.floor((diff % (1000 * 60)) / 1000);
+      cd.innerText = `Locked for: ${hrs}h ${mins}m ${secs}s`;
+      setTimeout(update, 1000);
+    }
+    update();
+  }
+
+  // On reload restore
+  window.onload = function() {
+    const mobile = localStorage.getItem(verifyKey);
+    const nums = JSON.parse(localStorage.getItem(saveKey));
+    const randoms = JSON.parse(localStorage.getItem(randomKey));
+    const lockUntil = localStorage.getItem(lockKey);
+
+    if (mobile) {
+      document.getElementById("showMobile").innerText = "Your number: " + mobile;
+      document.getElementById("numberSection").classList.remove("hidden");
+    }
+    if (nums) {
+      const inputs = document.querySelectorAll("#clientNumbers input");
+      nums.forEach((n, i) => { inputs[i].value = n; inputs[i].disabled = true; });
+      document.getElementById("saveBtn").disabled = true;
+    }
+    if (randoms) showRandomNumbers();
+    if (lockUntil) startCountdown(lockUntil);
+  }
+</script>
+</body>
+</html>
